@@ -1,6 +1,7 @@
 
 window.addEventListener('DOMContentLoaded', (event) =>{
 
+    let easy = false
 
     let names = []
     let stars = []
@@ -65,7 +66,7 @@ document.addEventListener('keyup', (event) => {
                 if(squarecircle(colonizebutton, tip)){
                     if(selectedrace.wealth >= 500){
                     selectedrace.wealth -= 500
-                    let shipbuilt = new Ship(selectedplanet)
+                    let shipbuilt = new Ship(selected)
                     shipbuilt.colonize = 1
                     ships.push(shipbuilt)
                     }
@@ -121,6 +122,9 @@ document.addEventListener('keyup', (event) => {
                  }
             }
           }else{
+            if(squarecircle(easymode, tip)){
+                easy = true
+            }
             if(squarecircle(playkursa, tip)){
            
                 playhumans.color = "white"
@@ -145,19 +149,29 @@ document.addEventListener('keyup', (event) => {
                 selectedrace = vaptrons
                 raceselected = 1
             }
+            if(squarecircle(bigshipbutton, tip)){
+               
+                playhumans.color = "white"
+                selectedrace = dummyrace
+                raceselected = 1
+            }
           }
           for(let p=0;p<planets.length; p++){
           if(intersects(planets[p].body, tip)){
-              if(selectingplanet == 0){
+            //   if(selectingplanet == 0){
               if(typeof shipselected.body == 'undefined'){
               selected = planets[p]
               tringle.x = planets[p].body.x 
               tringle.y = planets[p].body.y - (planets[p].body.radius+20)
+
+            //   }else{
+            //     selectingplanet = 1
+            //   }
               }else{
-                selectingplanet = 1
-              }
-              }else{
-               shipselected = selected
+            //    shipselected = selected
+
+            stringle.x =shipselected.body.x 
+            stringle.y = shipselected.body.y - 20
                   selectedplanet = planets[p]
                 selected = planets[p]
                 tringle.x = planets[p].body.x 
@@ -339,7 +353,7 @@ document.addEventListener('keyup', (event) => {
 
             if(selected == this){
             tutorial_canvas_context.fillStyle = "white";
-            tutorial_canvas_context.font = `${30}px Arial`
+            tutorial_canvas_context.font = `${25}px Arial`
             tutorial_canvas_context.fillText(`Owner wealth: ${Math.floor(this.owner.wealth)}`, 750, 50);
             tutorial_canvas_context.fillText(`Planet: ${this.name}`, 750, 100);
             tutorial_canvas_context.fillText(`Fertility: ${this.fertility}`, 750, 200);
@@ -349,7 +363,7 @@ document.addEventListener('keyup', (event) => {
             tutorial_canvas_context.fillText(`Owned by: ${this.owner.name}`, 750, 400);
             if(this.owner.name != "none"){
 
-            tutorial_canvas_context.fillText(`Population: ${this.population}`, 750, 450);
+            tutorial_canvas_context.fillText(`Population: ${Math.floor(this.population)}`, 750, 450);
             }
             }
          
@@ -357,7 +371,11 @@ document.addEventListener('keyup', (event) => {
     }
     class Ship{
         constructor(docked){
-        this.body = new Pointer(docked.body.x-20, docked.body.y-20, docked.owner.color, 7)
+
+            this.flag = new Rectangle(0, 0, 5, 8, docked.owner.color)
+            this.flagpole = new Rectangle(0,0,20,2,'white')
+            this.top = new Uppointer(docked.body.x-20, docked.body.y-20, docked.owner.color, 7.5)
+        this.body = new Pointer(docked.body.x-20, docked.body.y-20, docked.owner.color, 8)
         this.owner = docked.owner
         this.colonize = 0
         this.docked = docked
@@ -366,11 +384,31 @@ document.addEventListener('keyup', (event) => {
         this.weapons =  Math.floor(Math.random()*3)+4
         this.armor =  Math.floor(Math.random()*2)+2
         this.range = Math.floor(Math.random()*4)+3
+
+        if(this.owner.name == "Kursa"){
+            this.weapons +=  3
+            this.armor +=  2
+            this.range +=  2
+            }
+
+            if(this.owner.name == "Humans"){
+            let chooser = Math.random()
+            if(chooser < .33){
+            this.weapons +=  3
+            }else if(chooser < .66){
+            this.armor +=  2
+            }else{
+            this.range +=  2
+            }
+            }
+
+
         this.maxhull = 100
         this.hull = 100
         this.class = "Scout"
         this.moving = 0
         
+        this.incombat = false
         this.walkx = ((this.body.x -(this.docking.body.x))/(this.docked.routes[this.docking.name]))
         this.walky =  ((this.body.y - (this.docking.body.y))/(this.docked.routes[this.docking.name]))
         }
@@ -398,7 +436,10 @@ document.addEventListener('keyup', (event) => {
             if(this.moving == 0){
                 if(this.owner.name !== this.docked.owner.name && this.docked.owner.name!== "none"){
                     this.docked.population -= this.weapons * 100
-                    this.hull -= Math.floor(Math.random()*2)+1
+                    this.hull -= Math.floor(Math.random()*2)+2
+
+
+
                     if(this.docked.population < 0){
                         this.docked.population = 0
                     }
@@ -407,7 +448,23 @@ document.addEventListener('keyup', (event) => {
 
         }
         draw(){
+            this.top.x = this.body.x
+            this.top.y = this.body.y
+            this.flag.x = this.body.x 
+            this.flag.y = this.body.y - 10
+            this.flagpole.x = this.body.x 
+            this.flagpole.y = this.body.y - 10
+
+            if(this.colonize ==  1){
+                this.flagpole.draw()
+                this.flag.draw()
+            }
+            this.top.draw()
             this.body.draw()
+
+            if(Math.random() < 0.005){
+                this.incombat = false
+            }
 
             if(typeof shipselected.body !== "undefined"){
 
@@ -416,15 +473,32 @@ document.addEventListener('keyup', (event) => {
                 if(this.owner == selectedrace){
             movebutton.draw()
              repairbutton.draw()
+
+
+
+            tutorial_canvas_context.fillStyle = "black";
+            tutorial_canvas_context.font = `${15}px Arial`
+            tutorial_canvas_context.fillText(`Repair`, repairbutton.x+10, repairbutton.y+30);
+
+
+
+            tutorial_canvas_context.fillStyle = "black";
+            tutorial_canvas_context.font = `${15}px Arial`
+            tutorial_canvas_context.fillText(`Move`, movebutton.x+10, movebutton.y+30);
                 }
             if(this.colonize == 1){
                 this.class = "Colony Ship"
 
                 if(this.owner == selectedrace){
              playhumans.draw()
+
+
+             tutorial_canvas_context.fillStyle = "black";
+             tutorial_canvas_context.font = `${15}px Arial`
+             tutorial_canvas_context.fillText(`Colonize`, playhumans.x+10, playhumans.y+30);
                 }
             }else{
-                this.range = 7
+                // this.range = 7
             }
             }
             }
@@ -433,7 +507,7 @@ document.addEventListener('keyup', (event) => {
 
             if(selected == this){
                 tutorial_canvas_context.fillStyle = "white";
-                tutorial_canvas_context.font = `${30}px Arial`
+                tutorial_canvas_context.font = `${25}px Arial`
                 tutorial_canvas_context.fillText(`Class: ${this.class}`, 750, 50);
                 tutorial_canvas_context.fillText(`Hull strength: ${this.hull}/${this.maxhull}`, 750, 100);
                 tutorial_canvas_context.fillText(`Weapon strength: ${this.weapons}`, 750, 150);
@@ -465,8 +539,8 @@ document.addEventListener('keyup', (event) => {
             // if(this.wealth >= 500){
                 this.owned.push(planet)
                 planet.owner = this
-                if(planet.population < 10000){
-                    planet.population = 10000
+                if(planet.population < 50000){
+                    planet.population = 50000
                 }
                 // this.wealth-=500
             // }
@@ -477,7 +551,7 @@ document.addEventListener('keyup', (event) => {
 
             for(let g = 0; g<this.owned.length; g++){
 
-                let beam = new Line(this.owned[f].body.x, this.owned[f].body.y, this.owned[g].body.x, this.owned[g].body.y, this.color, 1)
+                let beam = new Line(this.owned[f].body.x, this.owned[f].body.y, this.owned[g].body.x, this.owned[g].body.y, this.color, 1.5)
                 beam.draw()
 
             }
@@ -523,6 +597,20 @@ document.addEventListener('keyup', (event) => {
 
                 for(let s = 0; s<ships.length; s++){
                     if(ships[s].owner !== selectedrace){
+
+
+
+                        if(ships[s].owner.name == ships[s].docked.owner.name && ships[s].incombat == false){
+                            if(ships[s].owner.wealth >= Math.floor((ships[s].maxhull-ships[s].hull)/3)){
+                                // console.log(ships[s], ships[s].owner.wealth)
+                                ships[s].owner.wealth -= Math.floor((ships[s].maxhull-ships[s].hull)/3)
+                                ships[s].hull = ships[s].maxhull
+                                // console.log(ships[s], ships[s].owner.wealth)
+                            }
+                        }
+
+
+
                         if(ships[s].colonize == 1){
                         if(ships[s].steps == 0){  
                                if(!vaptrons.owned.includes(ships[s].docking) &&!kursa.owned.includes(ships[s].docking) &&!buggos.owned.includes(ships[s].docking) && !humanzees.owned.includes(ships[s].docking)){
@@ -542,9 +630,16 @@ document.addEventListener('keyup', (event) => {
                         }
                         }else{
                         if(ships[s].moving == 0){
-                        if(ships[s].docked.owner == ships[s].owner){
-                            ships[s].reroute(planets[Math.floor(Math.random()*planets.length)])
-                        }
+                            if(easy == true){
+                                if(ships[s].docked.owner == ships[s].owner){
+                                    ships[s].reroute(planets[Math.floor(Math.random()*planets.length)])
+                                    }
+                            }else{
+                                   if(ships[s].docked.owner == ships[s].owner || (ships[s].docked.owner.name == "none" && ships[s].class !== "Colony Ship")   &&    ships[s].incombat == false ){
+                                 ships[s].reroute(planets[Math.floor(Math.random()*planets.length)])
+                                 }
+                            }
+                     
                         }
                         }
                     }
@@ -555,7 +650,15 @@ document.addEventListener('keyup', (event) => {
 
 
             for(let f = 0; f<this.owned.length; f++){
+                if(this.name != "Vaptrons"){
+                    if(this.name != "Humans"){
                this.wealth+= (this.owned[f].minerals/10)
+                    }else{
+               this.wealth+= ((1+this.owned[f].minerals)/10)
+                    }
+                }else{
+               this.wealth+= ((3+this.owned[f].minerals)/10)
+                }
             }
         }
         populate(){
@@ -563,11 +666,20 @@ document.addEventListener('keyup', (event) => {
             for(let f = 0; f<this.owned.length; f++){
                 // console.log(this.owned[f].population)
                 if(this.owned[f].population < 1000000){                  // (Math.pow(this.owned[f].fertility, this.owned[f].size))){
+
+                if(this.name != "Buggos"){
+                if(this.name != "Humans"){
                 this.owned[f].population *=  1+((this.owned[f].fertility - this.owned[f].polution)/10000)
+                }else{
+                this.owned[f].population *=  1+(((this.owned[f].fertility+2) - this.owned[f].polution)/10000)
+                }
+                }else{
+                this.owned[f].population *=  1+(((this.owned[f].fertility+6) - this.owned[f].polution)/10000)
+                }
                 }else{
                 this.owned[f].population *=  .995
                 }
-                this.owned[f].population = Math.floor(this.owned[f].population)
+                // this.owned[f].population = Math.floor(this.owned[f].population)
              }
         }
     }
@@ -597,6 +709,82 @@ document.addEventListener('keyup', (event) => {
     //     }
     // }
     class Pointer{
+        constructor(x,y, color, length=40){
+            this.x = x
+            this.y = y
+            this.color = color
+            this.length = length
+            this.radius = length*2.5
+        }
+        draw(){
+ 
+            tutorial_canvas_context.beginPath(); 
+    
+            tutorial_canvas_context.moveTo(this.x, this.y+this.length/2); 
+            
+            tutorial_canvas_context.lineTo(this.x+this.length, this.y+this.length/2); 
+            
+            tutorial_canvas_context.lineTo(this.x,this.y+this.length*1.41); 
+            
+            tutorial_canvas_context.lineTo(this.x-this.length, this.y+this.length/2); 
+ 
+            tutorial_canvas_context.lineTo(this.x,this.y+this.length/2); 
+ 
+            tutorial_canvas_context.stroke();  
+            tutorial_canvas_context.fillStyle = this.color
+            tutorial_canvas_context.fill()
+ 
+ 
+        }
+ 
+ }
+    class Uppointer{
+        constructor(x,y, color, length=40){
+            this.x = x
+            this.y = y
+            this.color = color
+            this.length = length
+            this.radius = length*2
+        }
+        draw(){
+
+
+            tutorial_canvas_context.lineWidth = 2
+ 
+            tutorial_canvas_context.beginPath(); 
+            
+    
+            tutorial_canvas_context.moveTo(this.x, this.y+this.length/2); 
+            
+            tutorial_canvas_context.lineTo(this.x+this.length, this.y+this.length/2); 
+            
+            tutorial_canvas_context.lineTo(this.x,this.y-this.length*.1); 
+            
+            tutorial_canvas_context.lineTo(this.x-this.length, this.y+this.length/2); 
+ 
+            tutorial_canvas_context.lineTo(this.x,this.y+this.length/2); 
+ 
+            if(this.color == humanzees.color){
+                tutorial_canvas_context.strokeStyle = "white"
+            }
+            if(this.color == vaptrons.color){
+                tutorial_canvas_context.strokeStyle = "red"
+            }
+            if(this.color == buggos.color){
+                tutorial_canvas_context.strokeStyle = "yellow"
+            }
+            if(this.color == kursa.color){
+                tutorial_canvas_context.strokeStyle = "purple"
+            }
+            tutorial_canvas_context.stroke();  
+            tutorial_canvas_context.fillStyle = this.color
+            tutorial_canvas_context.fill()
+ 
+ 
+        }
+ 
+ }
+    class Skinnypointer{
            constructor(x,y, color, length=40){
                this.x = x
                this.y = y
@@ -605,18 +793,19 @@ document.addEventListener('keyup', (event) => {
                this.radius = length*2
            }
            draw(){
+            tutorial_canvas_context.strokeStyle = this.color
     
                tutorial_canvas_context.beginPath(); 
        
-               tutorial_canvas_context.moveTo(this.x, this.y+this.length/2); 
+               tutorial_canvas_context.moveTo(this.x, this.y+this.length/8); 
                
-               tutorial_canvas_context.lineTo(this.x+this.length, this.y+this.length/2); 
+               tutorial_canvas_context.lineTo(this.x+this.length/2, this.y+this.length/8); 
                
-               tutorial_canvas_context.lineTo(this.x,this.y+this.length*1.41); 
+               tutorial_canvas_context.lineTo(this.x,this.y+this.length*2); 
                
-               tutorial_canvas_context.lineTo(this.x-this.length, this.y+this.length/2); 
+               tutorial_canvas_context.lineTo(this.x-this.length/2, this.y+this.length/8); 
     
-               tutorial_canvas_context.lineTo(this.x,this.y+this.length/2); 
+               tutorial_canvas_context.lineTo(this.x,this.y+this.length/8); 
     
                tutorial_canvas_context.stroke();  
                tutorial_canvas_context.fillStyle = this.color
@@ -628,6 +817,7 @@ document.addEventListener('keyup', (event) => {
     }
 
     let playvaptrons = new Rectangle(925, 500, 75, 75, "pink")
+    let easymode = new Rectangle(700, 575, 75, 75, "white")
     let playkursa = new Rectangle(700, 500, 75, 75, "orange")
     let playbuggos = new Rectangle(775, 500, 75, 75, "green")
     let playhumans = new Rectangle(850, 500, 75, 75, "blue")
@@ -635,8 +825,9 @@ document.addEventListener('keyup', (event) => {
     let colonizebutton = new Rectangle(925, 500, 75, 75, "red")
     let movebutton = new Rectangle(925, 575, 75, 75, "cyan")
     let bigshipbutton = new Rectangle(1000, 500, 75, 75, "purple")
-    let tringle = new Pointer(100, 120, "white", 10)
-    let ptringle = new Pointer(100, 120, "yellow", 10)
+    let tringle = new Skinnypointer(100, 120, "white", 10)
+    let ptringle = new Skinnypointer(100, 120, "yellow", 10)
+    let stringle = new Skinnypointer(-100, -120, "gray", 10)
     let dispbox = new Rectangle(700, 0, 700, 500, "gray")
     let blo = new Planet(150, 200)
     blo.fertility = 11
@@ -688,11 +879,19 @@ document.addEventListener('keyup', (event) => {
     vlox.minerals = 6
 
 
+    // let sagittarius = new Planet(350, 350)
+    // sagittarius.fertility =  50
+    // sagittarius.minerals =  50
+    // sagittarius.size = 5
+    // sagittarius.body.radius = 5
+
+    let dummyrace = new Race("Dummy", "black")
+    // let sagit = new Race("Sagit", "red")
     let vaptrons = new Race("Vaptrons", "pink")
     let kursa = new Race("Kursa", "orange")
     let buggos = new Race("Buggos")
     let humanzees = new Race("Humans", "blue")
-    for(let g = 0; g< 60; g++){
+    for(let g = 0; g<60; g++){
 
         let blog = new Planet(25+Math.random()*655, 25+Math.random()*655)
         
@@ -711,6 +910,9 @@ document.addEventListener('keyup', (event) => {
     kursa.colonize(klox)
     vaptrons.colonize(vlo)
     vaptrons.colonize(vlox)
+
+    // sagit.colonize(sagittarius)
+
     for(let h = 0 ; h<500; h++){
 
         let rect = new Rectangle ( Math.random()*tutorial_canvas.width, Math.random()*tutorial_canvas.height, Math.random()*2.5, Math.random()*2.5, getRandomLightColor())
@@ -757,6 +959,8 @@ document.addEventListener('keyup', (event) => {
 
 
 
+
+        // sagit.draw()
 
         buggos.draw()
         humanzees.draw()
@@ -824,7 +1028,9 @@ document.addEventListener('keyup', (event) => {
         humanzees.resource()
         kursa.resource()
         vaptrons.resource()
-            buggos.populate()
+            // sagit.resource()
+            // sagit.populate()
+                buggos.populate()
             humanzees.populate()
             kursa.populate()
             vaptrons.populate()
@@ -856,14 +1062,50 @@ document.addEventListener('keyup', (event) => {
             if(typeof selected.population != "undefined"){
                 if(selected.owner == selectedrace){
                     bigshipbutton.draw()
+                    colonizebutton.draw()
+
+                    tutorial_canvas_context.fillStyle = "white";
+                    tutorial_canvas_context.font = `${12}px Arial`
+                    tutorial_canvas_context.fillText(`Colony ship`, colonizebutton.x+5, bigshipbutton.y+30);
+
+                    tutorial_canvas_context.fillStyle = "white";
+                    tutorial_canvas_context.font = `${15}px Arial`
+                    tutorial_canvas_context.fillText(`Skirmisher`, bigshipbutton.x+2, bigshipbutton.y+30);
+
+
                 }
             }
-            colonizebutton.draw()
         }else{
             playbuggos.draw()
             playhumans.draw()
+            if(easy == false){
+            easymode.draw()
+            tutorial_canvas_context.fillStyle = "black";
+            tutorial_canvas_context.font = `${15}px Arial`
+            tutorial_canvas_context.fillText(`Easy`, easymode.x+20, easymode.y+40);
+            }
             playkursa.draw()
             playvaptrons.draw()
+
+            tutorial_canvas_context.fillStyle = "white";
+            tutorial_canvas_context.font = `${15}px Arial`
+            tutorial_canvas_context.fillText(`Humans`, playhumans.x+10, playhumans.y+30);
+
+            tutorial_canvas_context.fillStyle = "black";
+            tutorial_canvas_context.font = `${15}px Arial`
+            tutorial_canvas_context.fillText(`Kursa`, playkursa.x+10, playkursa.y+30);
+
+            tutorial_canvas_context.fillStyle = "black";
+            tutorial_canvas_context.font = `${15}px Arial`
+            tutorial_canvas_context.fillText(`Vaptrons`, playvaptrons.x+10, playvaptrons.y+30);
+
+            tutorial_canvas_context.fillStyle = "black";
+            tutorial_canvas_context.font = `${15}px Arial`
+            tutorial_canvas_context.fillText(`Buggos`, playbuggos.x+10, playbuggos.y+30);
+
+
+
+
         }
 
         tringle.x = selected.body.x 
@@ -872,14 +1114,31 @@ document.addEventListener('keyup', (event) => {
         ptringle.x = selectedplanet.body.x 
         ptringle.y = selectedplanet.body.y - (selectedplanet.body.radius+20)
 
+        if(typeof  shipselected.body !== "undefined"){
+            stringle.x = shipselected.body.x 
+            stringle.y = shipselected.body.y -  (shipselected.body.radius+20)
+            
+        }
+
 
 
         for(let p = 0; p<planets.length; p++){
             planets[p].draw()
         }
 
+        for(let s = 0; s<ships.length; s++){
+            if(ships[s].owner.name != ships[s].docked.owner.name && ships[s].docked.population !== 0 && ships[s].docking.owner !== "none"&& ships[s].docked.owner !== "none" &&(ships[s].docked.name == ships[s].docking.name)){
+                if(Math.random() < .9){
+                    let beamx = new Line(ships[s].docked.body.x+((Math.random()*ships[s].docked.body.radius)-(ships[s].docked.body.radius/2)), ships[s].docked.body.y+((Math.random()*ships[s].docked.body.radius)-(ships[s].docked.body.radius/2)), ships[s].body.x, ships[s].body.y, ships[s].owner.color, 3)
+                    beamx.draw()
+                }
+            }
+        }
+
+        stringle.draw()
         ptringle.draw()
         tringle.draw()
+    
 
 
         for(let s = 0; s<ships.length; s++){
@@ -1020,12 +1279,19 @@ function randomplanetnames(planet){
 
     var letters = 'bcdfghjklmnpqrstvwxyz';
     var volesl = 'aeiouyaeiou'
+    // var volesl = 'aaaaaaaaaaa'
     
     planet.name = ''
-    let jee = Math.floor(Math.random()*5)+1
+    let jee = Math.floor(Math.random()*6)+1
     for (var i = 0; i < jee; i++) {
+        if(Math.random()< 0.03){
+        planet.name += letters[(Math.floor(Math.random() * 21))];
+        }
         planet.name += letters[(Math.floor(Math.random() * 21))];
         planet.name += volesl[(Math.floor(Math.random() * 11))];
+        if(Math.random()< 0.06){
+            planet.name += volesl[(Math.floor(Math.random() * 11))];
+        }
     }
 
 
@@ -1035,9 +1301,10 @@ function randomplanetnames(planet){
     for(let l = 1; l<floot.length; l++){
         planet.name += floot[l]
     }
-
-    if(!names.includes(planet.name)){
         planet.name = letter+(planet.name)
+
+
+    if(!names.includes(`${planet.name}`)){
         names.push(planet.name)
     }else{
         randomplanetnames(planet)
@@ -1068,9 +1335,12 @@ function shipcombat(){
             if(intersects(ships[g].body, ships[k].body)){
                 if(ships[g].owner.name !== ships[k].owner.name){
                     if( (ships[g].weapons - ships[k].armor) > 0){
+
+                        ships[g].incombat = true
                     ships[k].hull -= (ships[g].weapons - ships[k].armor)
                     }
                     if( (ships[k].weapons - ships[g].armor) > 0){
+                        ships[k].incombat = true
                     ships[g].hull -= (ships[k].weapons - ships[g].armor)
                     }
                 }
